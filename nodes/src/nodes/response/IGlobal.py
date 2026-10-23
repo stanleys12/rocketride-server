@@ -24,6 +24,15 @@
 from typing import Dict
 from rocketlib import IGlobalBase
 
+# Keys the node writes into the response itself; a result key with one of
+# these names would be overwritten by, or overwrite, the node's own data
+RESERVED_KEYS = frozenset({'result_types', 'metadata', 'name', 'path'})
+
+
+def _checkKey(key: str):
+    if key in RESERVED_KEYS:
+        raise ValueError(f'Result key "{key}" is reserved; choose a name other than {", ".join(sorted(RESERVED_KEYS))}')
+
 
 class IGlobal(IGlobalBase):
     lanes: Dict[str, str] = {}
@@ -40,6 +49,7 @@ class IGlobal(IGlobalBase):
         if 'laneName' in config:
             # If the laneName is specified, use it
             self.laneName = config['laneName']
+            _checkKey(self.laneName)
 
         # If there is a lanes specifier (obsolete)
         if 'lanes' in config:
@@ -52,6 +62,8 @@ class IGlobal(IGlobalBase):
                 # If either is not specified, skip it
                 if not laneId or not laneName:
                     continue
+
+                _checkKey(laneName)
 
                 # Add the lane to the global lanes dictionary
                 self.lanes[laneId] = laneName
